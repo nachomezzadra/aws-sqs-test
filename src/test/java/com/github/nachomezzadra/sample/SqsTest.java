@@ -3,18 +3,53 @@ package com.github.nachomezzadra.sample;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.regions.Region;
-import com.amazonaws.regions.Regions;
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClient;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.*;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.Assert.assertNotNull;
+
 public class SqsTest extends BaseSpringTest {
+
+    @Test
+    public void shouldProperlyGrantPermissions() {
+        AmazonSQS sqs = getAmazonSQS();
+        String awsKey = "399265524741";
+        String queueName = "nacho-test";
+
+        AddPermissionRequest addPermissionRequest = new AddPermissionRequest();
+        addPermissionRequest.setQueueUrl(sqs.getQueueUrl(queueName).getQueueUrl());
+        addPermissionRequest.setActions(Arrays.asList("SendMessage", "ReceiveMessage", "GetQueueUrl", "DeleteMessage", "GetQueueAttributes"));
+        addPermissionRequest.setLabel("Some Tenant");
+        addPermissionRequest.setAWSAccountIds(Arrays.asList(awsKey));
+        AddPermissionResult addPermissionResult = sqs.addPermission(addPermissionRequest);
+
+        assertNotNull(addPermissionResult);
+    }
+
+
+    @Test
+    public void shouldProperlyRevokePermissions() {
+        AmazonSQS sqs = getAmazonSQS();
+        String queueName = "nacho-test";
+
+        RemovePermissionRequest removePermissionRequest = new RemovePermissionRequest();
+        removePermissionRequest.setLabel("Some Tenant");
+        removePermissionRequest.setQueueUrl(sqs.getQueueUrl(queueName).getQueueUrl());
+        RemovePermissionResult removePermissionResult = sqs.removePermission(removePermissionRequest);
+
+        assertNotNull(removePermissionResult);
+    }
+
 
     @Test
     public void shoudlProperlyCreateAnSqs() {
@@ -24,10 +59,12 @@ public class SqsTest extends BaseSpringTest {
         System.out.println("Getting Started with Amazon SQS");
         System.out.println("===========================================\n");
 
+        String queueName = "nacho-test";
+
         try {
             // Create a queue
-            System.out.println("Creating a new SQS queue called MyQueue.\n");
-            CreateQueueRequest createQueueRequest = new CreateQueueRequest("nacho-test");
+            System.out.println("Creating a new SQS queue called " + queueName + "\n");
+            CreateQueueRequest createQueueRequest = new CreateQueueRequest(queueName);
             String myQueueUrl = sqs.createQueue(createQueueRequest).getQueueUrl();
 
             // List queues
@@ -55,32 +92,18 @@ public class SqsTest extends BaseSpringTest {
     }
 
     private AmazonSQS getAmazonSQS() {
-//        AWSCredentials credentials = null;
-        AWSCredentials credentials = new AWSCredentials() {
-            public String getAWSAccessKeyId() {
-                return "AKIAJTHP46QFQDQJWD4A";
-            }
+        BasicAWSCredentials credentials = new BasicAWSCredentials("AKIQI63B4XDOKYS3SAYA",
+                "ssNtWHNcrCUD3HXaqbCxy/AQ+t4yVJ2MX+oB5Y9z");
+        AwsClientBuilder.EndpointConfiguration endpointConfiguration = new AwsClientBuilder.EndpointConfiguration("https://sqs.us-west-2.amazonaws.com",
+                "us-west-2");
 
-            public String getAWSSecretKey() {
-                return "uR+FLVDRLWO1RVy4Hzn7YojeUA1kI7Zl7y0cTaL4";
-            }
-        };
-        try {
+        ClientConfiguration config = new ClientConfiguration();
+        AmazonSQS sqsNew = AmazonSQSClientBuilder.standard().
+                withCredentials(new AWSStaticCredentialsProvider(credentials)).
+                withEndpointConfiguration(endpointConfiguration).
+                build();
 
-//            credentials = new ProfileCredentialsProvider().getCredentials();
-        } catch (Exception e) {
-            throw new AmazonClientException(
-                    "Cannot load the credentials from the credential profiles file. " +
-                            "Please make sure that your credentials file is at the correct " +
-                            "location (~/.aws/credentials), and is in valid format.",
-                    e);
-        }
-
-        AmazonSQS sqs = new AmazonSQSClient(credentials);
-        Region usWest2 = Region.getRegion(Regions.US_EAST_1);
-//        sqs.setRegion(usWest2);
-//        sqs.setEndpoint("http://localhost:4568");
-        return sqs;
+        return sqsNew;
     }
 
 
@@ -138,4 +161,22 @@ public class SqsTest extends BaseSpringTest {
         System.out.println("Deleting the test queue.\n");
         sqs.deleteQueue(new DeleteQueueRequest(myQueueUrl));
     }
+
+
+    @Test
+    public void shouldProperlyGetSqsRequestParameters() {
+        AmazonSQS sqs = getAmazonSQS();
+        GetQueueAttributesRequest getQRequest = new GetQueueAttributesRequest();
+        getQRequest.setQueueUrl("http://0.0.0.0:4568/nacho-test");
+        Map<String, String> attributes = sqs.getQueueAttributes(getQRequest).getAttributes();
+//        List<String> attributeNames = getQRequest.getAttributeNames();
+        System.out.println("Attributes: " + attributes);
+//        for (Map.Entry<String, String> eachAttribute : attributes) {
+//            System.out.println("Attribute: " + eachAttribute + "\n");
+//        }
+
+
+    }
+
+
 }
