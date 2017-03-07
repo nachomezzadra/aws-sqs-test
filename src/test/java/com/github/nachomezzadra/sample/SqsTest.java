@@ -92,26 +92,46 @@ public class SqsTest extends BaseSpringTest {
     }
 
     private AmazonSQS getAmazonSQS() {
-        BasicAWSCredentials credentials = new BasicAWSCredentials("AKIQI63B4XDOKYS3SAYA",
-                "ssNtWHNcrCUD3HXaqbCxy/AQ+t4yVJ2MX+oB5Y9z");
+        BasicAWSCredentials credentials = new BasicAWSCredentials("AKIAO63B4MDOKYR9SAYA",
+                "HNhtWHNcrCUD3HXQqbCxy/RQ+t4yVJ2MX+pB5Y9z");
         AwsClientBuilder.EndpointConfiguration endpointConfiguration = new AwsClientBuilder.EndpointConfiguration("https://sqs.us-west-2.amazonaws.com",
                 "us-west-2");
 
         ClientConfiguration config = new ClientConfiguration();
         AmazonSQS sqsNew = AmazonSQSClientBuilder.standard().
                 withCredentials(new AWSStaticCredentialsProvider(credentials)).
-                withEndpointConfiguration(endpointConfiguration).
-                build();
+//                withRegion(Regions.fromName("us-west-2")).
+        withEndpointConfiguration(endpointConfiguration).
+                        build();
+
 
         return sqsNew;
     }
 
 
     @Test
-    public void shouldProperlySendAMessageToSqs() {
+    public void shouldProperlySendAMessageToSqsOwnedByMe() {
+        String queueName = "nacho-test";
+
         AmazonSQS sqs = getAmazonSQS();
         GetQueueUrlRequest getQRequest = new GetQueueUrlRequest();
-        getQRequest.setQueueName("nacho-test");
+        getQRequest.setQueueName(queueName);
+        String myQueueUrl = sqs.getQueueUrl(getQRequest).getQueueUrl();
+
+        // Send a message
+        System.out.println("Sending a message to MyQueue.\n");
+        sqs.sendMessage(new SendMessageRequest(myQueueUrl, "This is my message text."));
+    }
+
+    @Test
+    public void shouldProperlySendAMessageToSqsOwnedBySomeoneElse() {
+        String queueName = "nacho-test";
+        String queueOwnerAWSAccountId = "209622272798";
+
+        GetQueueUrlRequest getQRequest = new GetQueueUrlRequest();
+        AmazonSQS sqs = getAmazonSQS();
+        getQRequest.setQueueName(queueName);
+        getQRequest.setQueueOwnerAWSAccountId(queueOwnerAWSAccountId);
         String myQueueUrl = sqs.getQueueUrl(getQRequest).getQueueUrl();
 
         // Send a message
