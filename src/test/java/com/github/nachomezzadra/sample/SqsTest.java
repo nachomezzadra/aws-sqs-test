@@ -3,7 +3,6 @@ package com.github.nachomezzadra.sample;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
@@ -92,20 +91,21 @@ public class SqsTest extends BaseSpringTest {
     }
 
     private AmazonSQS getAmazonSQS() {
+//        BasicAWSCredentials credentials = new BasicAWSCredentials("",
+//                "");
+//        AwsClientBuilder.EndpointConfiguration endpointConfiguration = new AwsClientBuilder.EndpointConfiguration("https://sqs.us-west-2.amazonaws.com",
+//                "us-west-2");
+
         BasicAWSCredentials credentials = new BasicAWSCredentials("AKIAO63B4MDOKYR9SAYA",
                 "HNhtWHNcrCUD3HXQqbCxy/RQ+t4yVJ2MX+pB5Y9z");
-        AwsClientBuilder.EndpointConfiguration endpointConfiguration = new AwsClientBuilder.EndpointConfiguration("https://sqs.us-west-2.amazonaws.com",
+        AwsClientBuilder.EndpointConfiguration endpointConfiguration = new AwsClientBuilder.EndpointConfiguration("http://localhost:4568",
                 "us-west-2");
 
-        ClientConfiguration config = new ClientConfiguration();
-        AmazonSQS sqsNew = AmazonSQSClientBuilder.standard().
+        return AmazonSQSClientBuilder.standard().
                 withCredentials(new AWSStaticCredentialsProvider(credentials)).
-//                withRegion(Regions.fromName("us-west-2")).
-        withEndpointConfiguration(endpointConfiguration).
-                        build();
+                withEndpointConfiguration(endpointConfiguration).
+                build();
 
-
-        return sqsNew;
     }
 
 
